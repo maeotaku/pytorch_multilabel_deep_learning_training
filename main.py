@@ -8,7 +8,6 @@ import torch.nn as nn
 import torch.nn.parallel
 import torch.backends.cudnn as cudnn
 import torch.optim as optim
-import torchvision.models as models
 
 #import models.imagenet as customized_models
 from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
@@ -21,6 +20,7 @@ from funcs import *
 from data import *
 from training import *
 from arguments import args, state
+from aimodel import *
 
 '''
 #Freeze params
@@ -46,39 +46,20 @@ if args.manualSeed is None:
 random.seed(args.manualSeed)
 torch.manual_seed(args.manualSeed)
 if use_cuda:
-    torch.cuda.manual_seed_all(args.manualSeed)
+    torch.cuda.manual_seed_all(argßs.manualSeed)
+
 
 def main():
     title = 'Plant-' + args.arch
     best_acc = 0
+    cudnn.benchmark = True
     start_epoch = args.start_epoch  # start from epoch 0 or last checkpoint epoch
+    num_classes = dset.hierarchy.get_class_level_size(0)
 
     if not os.path.isdir(args.checkpoint):
         mkdir_p(args.checkpoint)
 
-    # create model
-    if args.pretrained:
-        print("=> using pre-trained model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](pretrained=True)
-    elif args.arch.startswith('resnext'):
-        model = models.__dict__[args.arch](
-                    baseWidth=args.base_width,
-                    cardinality=args.cardinality,
-                )
-    else:
-        print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch]()
-
-    num_ftrs = model.fc.in_features
-    num_classes = dset.hierarchy.get_class_level_size(0)
-    model.fc = nn.Linear(num_ftrs, num_classes)
-
-    cudnn.benchmark = True
-    if use_cuda:
-        model.cuda()
-    print('    Total params: %.2fM' % (sum(p.numel() for p in model.parameters())/1000000.0))
-
-    # define loss function (criterion) and optimizer
+    model = create_model(predefined_model(args), num_classes)
     criterion = cross_entropy#nn.CrossEntropyLoss().cuda()
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
