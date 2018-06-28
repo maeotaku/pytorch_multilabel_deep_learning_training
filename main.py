@@ -46,7 +46,7 @@ if args.manualSeed is None:
 random.seed(args.manualSeed)
 torch.manual_seed(args.manualSeed)
 if use_cuda:
-    torch.cuda.manual_seed_all(argßs.manualSeed)
+    torch.cuda.manual_seed_all(args.manualSeed)
 
 
 def main():
@@ -59,7 +59,7 @@ def main():
     if not os.path.isdir(args.checkpoint):
         mkdir_p(args.checkpoint)
 
-    model = create_model(predefined_model(args), num_classes)
+    model = create_model(predefined_model(args), num_classes, use_cuda)
     criterion = cross_entropy#nn.CrossEntropyLoss().cuda()
     optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 

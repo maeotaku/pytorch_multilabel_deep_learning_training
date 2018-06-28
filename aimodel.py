@@ -19,7 +19,7 @@ def predefined_model(args):
     return model
 
 
-def create_model(model, num_classes):
+def create_model(model, num_classes, use_cuda):
     
     num_ftrs = model.fc.in_features
     model.fc = nn.Linear(num_ftrs, num_classes)
