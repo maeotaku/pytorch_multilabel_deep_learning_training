@@ -1,0 +1,15 @@
+#PBS -N pytorch_dataset
+#PBS -q gpu-n1h72
+#PBS -l nodes=1:ppn=1
+#PBS -l walltime=25:00:00
+
+#module avail
+#module list
+
+#module load cuda/8.0.61
+#module load cudnn-8/5.1.10
+module load cuda/9.0.176
+module load cudnn-9/7.0.4
+module load intelpython/3.5
+
+python ~/PyTorch/PyTorch_CustomDataset/main.py
