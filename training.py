@@ -33,23 +33,30 @@ def train(loader, model, criterion, optimizer, epoch, use_cuda):
 
     bar = Bar('Processing', max=len(loader))
     for batch_idx, (inputs, targets) in enumerate(loader):
-        parents = targets[:,1].contiguous()
-        targets = targets[:,0].contiguous()
+        #parents = targets[:,1].contiguous()
+        if isinstance(targets, tuple):
+            targets = targets[:,0].contiguous()
         #print(targets[:,2])
 
         # measure data loading time
         data_time.update(time.time() - end)
 
         if use_cuda:
-            inputs, targets, parents = inputs.cuda(), targets.cuda(async=True), parents.cuda(async=True)
-        inputs, targets, parents = torch.autograd.Variable(inputs), torch.autograd.Variable(targets), torch.autograd.Variable(parents)
+            inputs, targets = inputs.cuda(), targets.cuda(async=True)
+        inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
         # compute output
         outputs = model(inputs)
-        loss = criterion(outputs, targets, parents)
+        if isinstance(outputs, tuple):
+            loss = sum((criterion(o, targets) for o in outputs))
+            prec1, prec5 = accuracy(outputs[0].data, targets.data, topk=(1, 5))
+        else:
+            loss = criterion(outputs, targets)
+            prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
+
 
         # measure accuracy and record loss
-        prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
+
         losses.update(loss.data[0], inputs.size(0))
         top1.update(prec1[0], inputs.size(0))
         top5.update(prec5[0], inputs.size(0))
@@ -77,7 +84,7 @@ def train(loader, model, criterion, optimizer, epoch, use_cuda):
                     )
         bar.next()
     bar.finish()
-    return (losses.avg, top1.avg)
+    return (losses.avg, top1.avg, top5.avg)
 
 def test(loader, model, criterion, epoch, use_cuda):
     global best_acc
@@ -94,22 +101,25 @@ def test(loader, model, criterion, epoch, use_cuda):
     end = time.time()
     bar = Bar('Processing', max=len(loader))
     for batch_idx, (inputs, targets) in enumerate(loader):
-        parents = targets[:,1].contiguous()
-        targets = targets[:,0].contiguous()
+        #parents = targets[:,1].contiguous()
+        if isinstance(targets, tuple):
+            targets = targets[:,0].contiguous()
 
         # measure data loading time
         data_time.update(time.time() - end)
 
         if use_cuda:
-            inputs, targets, parents = inputs.cuda(), targets.cuda(), parents.cuda()
-        inputs, targets, parents = torch.autograd.Variable(inputs, volatile=True), torch.autograd.Variable(targets), torch.autograd.Variable(parents)
+            inputs, targets = inputs.cuda(), targets.cuda(async=True)
+        inputs, targets = torch.autograd.Variable(inputs), torch.autograd.Variable(targets)
 
-        # compute output
         outputs = model(inputs)
-        loss = criterion(outputs, targets, parents)
+        if isinstance(outputs, tuple):
+            loss = sum((criterion(o, targets) for o in outputs))
+            prec1, prec5 = accuracy(outputs[0].data, targets.data, topk=(1, 5))
+        else:
+            loss = criterion(outputs, targets)
+            prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
 
-        # measure accuracy and record loss
-        prec1, prec5 = accuracy(outputs.data, targets.data, topk=(1, 5))
         losses.update(loss.data[0], inputs.size(0))
         top1.update(prec1[0], inputs.size(0))
         top5.update(prec5[0], inputs.size(0))
@@ -132,47 +142,4 @@ def test(loader, model, criterion, epoch, use_cuda):
                     )
         bar.next()
     bar.finish()
-    return (losses.avg, top1.avg)
-
-
-def visualize_model(model, num_images=6):
-    was_training = model.training
-    model.eval()
-    images_so_far = 0
-    fig = plt.figure()
-
-    with torch.no_grad():
-        for i, (inputs, labels) in enumerate(dataloaders['val']):
-            inputs = inputs.to(device)
-            labels = labels.to(device)
-
-            outputs = model(inputs)
-            _, preds = torch.max(outputs, 1)
-
-            for j in range(inputs.size()[0]):
-                images_so_far += 1
-                ax = plt.subplot(num_images//2, 2, images_so_far)
-                ax.axis('off')
-                ax.set_title('predicted: {}'.format(class_names[preds[j]]))
-                imshow(inputs.cpu().data[j])
-
-                if images_so_far == num_images:
-                    model.train(mode=was_training)
-                    return
-        model.train(mode=was_training)
-
-
-'''
-def imshow(inp, title=None):
-    """Imshow for Tensor."""
-    inp = inp.numpy().transpose((1, 2, 0))
-    mean = np.array([0.485, 0.456, 0.406])
-    std = np.array([0.229, 0.224, 0.225])
-    inp = std * inp + mean
-    inp = np.clip(inp, 0, 1)
-    plt.imshow(inp)
-    if title is not None:
-        plt.title(title)
-    plt.pause(0.001)  # pause a bit so that plots are updated
-
-'''
+    return (losses.avg, top1.avg, top5.avg)

@@ -1,3 +1,6 @@
 [submodule "multilabel"]
 	path = multilabel
 	url = https://maeotaku@github.com/maeotaku/pytorch_multilabel_dataset.git
+[submodule "tsoftmax"]
+	path = tsoftmax
+	url = https://maeotaku@github.com/maeotaku/taxonomy-softmax.git
