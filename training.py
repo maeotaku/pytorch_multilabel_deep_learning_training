@@ -6,20 +6,6 @@ import time
 
 from utils import Bar, Logger, AverageMeter, accuracy, mkdir_p, savefig
 
-
-def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
-    filepath = os.path.join(checkpoint, filename)
-    torch.save(state, filepath)
-    if is_best:
-        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
-
-def adjust_learning_rate(optimizer, epoch, args):
-    global state
-    if epoch in args.schedule:
-        state['lr'] *= args.gamma
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = state['lr']
-
 def train(loader, model, criterion, optimizer, epoch, use_cuda):
     # switch to train mode
     model.train()

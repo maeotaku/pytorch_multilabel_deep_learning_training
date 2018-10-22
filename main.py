@@ -37,7 +37,18 @@ torch.manual_seed(args.manualSeed)
 if use_cuda:
     torch.cuda.manual_seed_all(args.manualSeed)
 
+def save_checkpoint(state, is_best, checkpoint='checkpoint', filename='checkpoint.pth.tar'):
+    filepath = os.path.join(checkpoint, filename)
+    torch.save(state, filepath)
+    if is_best:
+        shutil.copyfile(filepath, os.path.join(checkpoint, 'model_best.pth.tar'))
 
+def adjust_learning_rate(optimizer, epoch, args):
+    global state
+    if epoch in args.schedule:
+        state['lr'] *= args.gamma
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = state['lr']
 def main():
     title = 'Plant-' + args.arch
     best_acc = 0
@@ -76,7 +87,7 @@ def main():
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title, resume=True)
     else:
         logger = Logger(os.path.join(args.checkpoint, 'log.txt'), title=title)
-        logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc. Top 1', 'Train Acc. Top 5', 'Valid Acc. Top 1', 'Valid Acc. Top 5'])
+        logger.set_names(['Learning Rate', 'Train Loss', 'Valid Loss', 'Train Acc. Top 1', 'Train Acc. Top 5', 'Valid Acc. Top 1', 'Valid Acc. Top 5', 'USM Alpha'])
 
     if args.evaluate:
         print('\nEvaluation only')
@@ -94,7 +105,7 @@ def main():
         test_loss, test_acc, test_acc5 = test(dataloaders['val'], model, criterion, epoch, use_cuda)
 
         # append logger file
-        logger.append([state['lr'], train_loss, test_loss, train_acc, train_acc5, test_acc, test_acc5])
+        logger.append([state['lr'], train_loss, test_loss, train_acc, train_acc5, test_acc, test_acc5, float(model.filter.alpha.detach().data)])
 
         # save model
         is_best = test_acc > best_acc
