@@ -4,3 +4,6 @@
 [submodule "tsoftmax"]
 	path = tsoftmax
 	url = https://maeotaku@github.com/maeotaku/taxonomy-softmax.git
+[submodule "models/USM"]
+	path = models/USM
+	url = https://maeotaku@github.com/maeotaku/pytorch_usm.git
