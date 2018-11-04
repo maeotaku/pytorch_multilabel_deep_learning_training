@@ -6,19 +6,20 @@ from torch.autograd import Variable
 
 from .USM import *
 
-def lenet_usm(pretrained=False, num_classes=1000):
-    return LeNetUSM()
+def lenet_usm(pretrained=False, num_classes=100, cuda=False):
+    return LeNetUSM(num_classes, cuda)
 
-class LeNetUSM(nn.Module):
+def lenet(pretrained=False, num_classes=100, cuda=False):
+    return LeNet(num_classes, cuda)
+
+class LeNet(nn.Module):
     def __init__(self, num_classes, cuda=True):
-        super(LeNet, self).__init__()
-        self.filter = USM(in_channels=3, kernel_size=5, fixed_coeff=True, sigma=1.667, cuda=cuda, requires_grad=False)
-        #self.filter.assign_weight(4.759330)
+        nn.Module.__init__(self)
         self.conv1 = nn.Conv2d(3, 6, 5)
         self.conv2 = nn.Conv2d(6, 16, 5)
         self.fc1   = nn.Linear(16*5*5, 120)
         self.fc2   = nn.Linear(120, 84)
-        self.fc3   = nn.Linear(84, num_classes)
+        self.fc   = nn.Linear(84, num_classes)
 
     def forward(self, x):
         out = self.filter(x)
@@ -30,5 +31,14 @@ class LeNetUSM(nn.Module):
         out = out.view(out.size(0), -1)
         out = F.relu(self.fc1(out))
         out = F.relu(self.fc2(out))
-        out = self.fc3(out)
+        out = self.fc(out)
         return(out)
+
+class LeNetUSM(LeNet):
+    def __init__(self, num_classes, cuda=True):
+        LeNet.__init__(self, num_classes, cuda)
+        self.filter = USM(in_channels=3, kernel_size=5, fixed_coeff=True, sigma=1.667, cuda=cuda, requires_grad=False)
+
+    def forward(self, x):
+        x = self.filter(x)
+        return super().forward(x)

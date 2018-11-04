@@ -6,7 +6,8 @@ from .Inceptionv3USM import *
 from .ResNetUSM import *
 from .LeNetUSM import *
 from .ResNetCIFARUSM import *
-#from .CapsNetUSM import *
+from .CapsNet import *
+from .CapsNetUSM import *
 
 def predefined_model(args, cuda=True):
     # create model
@@ -23,16 +24,17 @@ def predefined_model(args, cuda=True):
         print("=> creating model '{}'".format(args.arch))
         model = models.__dict__[args.arch]()
     '''
-    model = resnet20_cifar_usm(pretrained=True, cuda=cuda)
+    #model = resnet20_cifar_usm(pretrained=True, cuda=cuda)
     #model = resnet18_usm(pretrained=True, cuda=cuda)
     #model = inception_v3_usm(pretrained=True, cuda=cuda)
+    model = capsnet(pretrained=True, cuda=cuda)
     print("Model Loaded.")
     return model
 
 
 def create_model(model, num_classes, cuda=True):
-    num_ftrs = model.fc.in_features
-    model.fc = nn.Linear(num_ftrs, num_classes)
+    #num_ftrs = model.fc.in_features
+    #model.fc = nn.Linear(num_ftrs, num_classes)
 
     if cuda:
         model.cuda()
